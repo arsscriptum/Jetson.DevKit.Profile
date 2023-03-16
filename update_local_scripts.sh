@@ -1,7 +1,7 @@
 #!/bin/sh
 
 datestr=`date`
-TMPLOGFILE=$MYTMP/progress_cuda_cross-sbsa.log
+TMPLOGFILE=$MYTMP/updatescripts.log
 
 rm -rf $TMPLOGFILE
 
@@ -18,16 +18,45 @@ validate_folder () {
 
 	if [ ! -d "$DIR" ]; then
 		setup_log "creating $DIR"
-	    sudo mkdir $DIR
+	   	mkdir $DIR
 	fi
 	setup_log "setting rights on $DIR"
-	sudo chmod -R u=rwx,go=rx $DIR
+	chmod -R 755 $DIR
 }
 
 
-setup_log "CUDA SOURCE DOWNLOAD"
+setup_log "UPDATING LOCAL SCRIPTS"
 
-validate_folder ~/dev/cuda
-validate_folder ~/dev/cuda/downlo
+cd ~/Jetson.DevKit.Profile 
 
+varzero=0
+conflicted=`git status | grep 'both modified:' | wc -l`
+
+if [ $conflicted -gt $varzero ];
+ then
+    setup_log "Error: merge problem. Resolve and continue manually."
+    exit 1
+ else
+    setup_log "no merge issues."
+fi
+
+tmpfname=`cat /dev/urandom | tr -dc '[:alpha:]' | fold -w ${1:-20} | head -n 1`
+fulltmpfile=$(printf "%s/%s.%s" "$MYTMP" "$tmpfname" "out")
+
+setup_log "copy and save in file $fulltmpfile"
+
+validate_folder ~/scripts
+cp -R --force --update --verbose ~/Jetson.DevKit.Profile/scripts/* ~/scripts > $fulltmpfile
+
+num_copied=`tail "$fulltmpfile" |  grep "\->" | wc -l`
+output=`tail "$fulltmpfile"`
+
+setup_log "number of copied files : $num_copied"
+
+if [ $num_copied -gt $varzero ];
+ then
+    setup_log "copy details : $output"
+ else
+    setup_log "no files copied"
+fi
 
