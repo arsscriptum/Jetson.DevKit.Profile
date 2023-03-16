@@ -1,9 +1,10 @@
 #!/bin/sh
-
-datestr=`date`
-TMPLOGFILE=$MYTMP/test_script.1.log
-
-rm -rf $TMPLOGFILE
+TEST
+TEST
+datestr=`date`TEST
+TMPLOGFILE=$MYTMP/test_script.1.logTEST
+TEST
+TESTrm -rf $TMPLOGFILE
 
 setup_log () {
   datestr=`date`
