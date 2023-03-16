@@ -25,6 +25,6 @@ setup_log "Now we can create a virtual environment using the mkvirtualenv comman
 
 setup_log "Getting Sources via get_important_source.sh" 
 
-/home/gp/scripts/setup/get_important_source.sh
+/home/gp/scripts/get_important_source.sh
 
 
