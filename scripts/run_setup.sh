@@ -16,7 +16,7 @@ setup_log "Setup Started"
 
 setup_log "Getting PreRequisites via get_prerequisites.sh"
 
-/home/gp/scripts/setup/get_prerequisites.sh
+/home/gp/scripts/setup/setup_prerequisites.sh
 
 setup_log "######################################################################"
 setup_log "Now we can create a virtual environment using the mkvirtualenv command" 
