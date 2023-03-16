@@ -1,13 +1,45 @@
 #!/bin/sh
 
-mkdir /home/gp/dev/cuda/cuda-src
-cd /home/gp/dev/cuda/cuda-src
+datestr=`date`
+TMPLOGFILE=$MYTMP/progress_cuda_cross-sbsa.log
 
-echo "CUDA Toolkit Source Download"
+rm -rf $TMPLOGFILE
 
-wget https://developer.download.nvidia.com/compute/cuda/opensource/12.1.0/cuda_gdb_src-all-all-12.1.55.tar.gz -O /home/gp/dev/cuda/cuda-src/cuda_gdb_src-all-all-12.1.55.tar.gz -o $MYTMP/out.txt
+setup_log () {
+  datestr=`date`
+  echo "[$datestr] $1" >> $TMPLOGFILE
+  echo "[$datestr] $1"
+}
 
-echo "CUDA Toolkit Checksums"
+validate_folder () {
+	DIR="$1"
 
-cd /home/gp/dev/cuda/
-wget https://developer.download.nvidia.com/compute/cuda/12.1.0/docs/sidebar/md5sum.txt
+	setup_log "validate_folder $DIR"
+
+	if [ ! -d "$DIR" ]; then
+		setup_log "creating $DIR"
+	    sudo mkdir $DIR
+	fi
+	setup_log "setting rights on $DIR"
+	sudo chmod -R u=rwx,go=rx $DIR
+}
+
+
+setup_log "CUDA SOURCE DOWNLOAD"
+
+validate_folder ~/dev/cuda
+validate_folder ~/dev/cuda/download
+validate_folder ~/dev/cuda/cuda-src
+
+
+
+setup_log "Downloading cuda_gdb_src-all-all-12.1.55.tar.gz source package to ~/dev/cuda/download/cuda_gdb_src-all-all-12.1.55.tar.gz"
+
+wget https://developer.download.nvidia.com/compute/cuda/opensource/12.1.0/cuda_gdb_src-all-all-12.1.55.tar.gz -O ~/dev/cuda/download/cuda_gdb_src-all-all-12.1.55.tar.gz -o $MYTMP/cout.log
+
+setup_log "unpacking package cuda_gdb_src-all-all-12.1.55.tar.gz in ~/dev/cuda/cuda-src"
+tar -xf ~/dev/cuda/download/cuda_gdb_src-all-all-12.1.55.tar.gz --directory ~/dev/cuda/cuda-src
+
+setup_log "done."
+
+cd ~/dev/cuda/cuda-src

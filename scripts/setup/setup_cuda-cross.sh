@@ -12,15 +12,33 @@ setup_log () {
 }
 
 
-setup_log "CUDA Toolkit 12.1 CROSS setup started on $datestr"
 
-setup_log "Download cuda-ubuntu2004.pin"
+validate_folder () {
+	DIR="$1"
 
-mkdir /home/gp/dev/cuda/cuda
-cd /home/gp/dev/cuda/cuda
+	setup_log "validate_folder $DIR"
+
+	if [ ! -d "$DIR" ]; then
+		setup_log "creating $DIR"
+	    sudo mkdir $DIR
+	fi
+	setup_log "setting rights on $DIR"
+	sudo chmod -R u=rwx,go=rx $DIR
+}
+
+
+
+setup_log "CUDA Toolkit 12.1 CROSS setup"
+
+
+
+validate_folder ~/dev/cuda
+validate_folder ~/dev/cuda/download
+validate_folder ~/dev/cuda/cuda-src
+
 
 setup_log "Download cuda-repo-cross-aarch64-ubuntu2004-12-1-local_12.1.0-1_all.deb"
-wget https://developer.download.nvidia.com/compute/cuda/12.1.0/local_installers/cuda-repo-cross-aarch64-ubuntu2004-12-1-local_12.1.0-1_all.deb  -O /home/gp/dev/cuda/cuda/cuda-repo-cross-aarch64-ubuntu2004-12-1-local_12.1.0-1_all.deb -o $MYTMP/out.log
+wget https://developer.download.nvidia.com/compute/cuda/12.1.0/local_installers/cuda-repo-cross-aarch64-ubuntu2004-12-1-local_12.1.0-1_all.deb  -O ~/dev/cuda/download/cuda-repo-cross-aarch64-ubuntu2004-12-1-local_12.1.0-1_all.deb -o $MYTMP/out.log
 
 setup_log "Validating checksums..."
 
