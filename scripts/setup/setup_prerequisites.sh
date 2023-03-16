@@ -22,6 +22,7 @@ sudo apt update
 
 setup_log "========== APT-GET UPGRADE START ========="
 sudo apt upgrade
+sudo apt-get autoremove
 
 
 setup_log "========== INITIALIZATION DONE ========="
@@ -32,6 +33,7 @@ sudo apt-get --assume-yes install git
 sudo apt-get --assume-yes install cmake
 sudo apt-get --assume-yes install python3-dev
 sudo apt-get --assume-yes install nano
+sudo apt-get autoremove
 
 setup_log "========== STEP 1 TERMINATED ========="
 
@@ -43,12 +45,31 @@ sudo apt-get --assume-yes install libhdf5-dev
 sudo apt-get --assume-yes install zlib1g-dev
 sudo apt-get --assume-yes install zip
 sudo apt-get --assume-yes install libjpeg8-dev
+sudo apt-get autoremove
+
 
 setup_log "========== STEP 2 TERMINATED ========="
 
 setup_log "========== INSTALLATION STEP 3 START ========="
 sudo apt-get --assume-yes install libjpeg-dev zlib1g-dev libpython3-dev libavcodec-dev libavformat-dev libswscale-dev
 setup_log "========== STEP 3 TERMINATED ========="
+
+sudo apt-get autoremove
+
+setup_log "========== PYTHON 3.5 =========="
+sudo apt-get --assume-yes install python3.5
+setup_log "========== PYTHON 2.7 =========="
+sudo apt-get --assume-yes install python2.7
+
+if ! [ -x "$(command -v pip)" ]; then
+  echo 'Error: pip is not installed.' >&2
+  exit 1
+fi
+
+if ! [ -x "$(command -v pip3)" ]; then
+  echo 'Error: pip3 is not installed.' >&2
+  exit 1
+fi
 
 setup_log "========== SETTING UP TOOLS ========="
 setup_log "pip3 install ; pip, testresources setuptools ; "
