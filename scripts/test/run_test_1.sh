@@ -1,11 +1,10 @@
 #!/bin/sh
-TEST
-TEST
-datestr=`date`TEST
-TMPLOGFILE=$MYTMP/test_script.1.logTEST
-TEST
-TESTrm -rf $TMPLOGFILE
 
+datestr=`date`
+TMPLOGFILE=$MYTMP/test_script.1.log
+11111
+rm -rf $TMPLOGFILE
+11111
 setup_log () {
   datestr=`date`
   echo "[$datestr] $1" >> $TMPLOGFILE
@@ -15,4 +14,6 @@ setup_log () {
 setup_log "Test Script No 1 Running..." 
 
 
-setup_log "Script Test 2 Done."
+setup_log "Script Test 1 Done."
+
+
