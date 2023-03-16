@@ -63,12 +63,16 @@ sudo apt-get --assume-yes install python2.7
 
 if ! [ -x "$(command -v pip)" ]; then
   echo 'Error: pip is not installed.' >&2
-  exit 1
+  sudo apt-get install python-pip
+else
+	setup_log "pip is installed"
 fi
 
 if ! [ -x "$(command -v pip3)" ]; then
   echo 'Error: pip3 is not installed.' >&2
-  exit 1
+  sudo apt-get install python3-pip
+else
+	setup_log "pip3 is installed"
 fi
 
 setup_log "========== SETTING UP TOOLS ========="
