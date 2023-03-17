@@ -35,3 +35,19 @@ invoke_remove () {
 
 	sudo apt-get -y remove $APP >> $TMPLOGFILE
 }
+
+invoke_reinstall () {
+	APP="$1"
+
+	setup_log "reinstalling $APP"
+
+	sudo apt-get -y --reinstall install $APP >> $TMPLOGFILE
+	#sudo apt reinstall install $APP >> $TMPLOGFILE
+}
+
+invoke_full_reinstall () {
+
+	setup_log "reinstalling using aptitude"
+
+	sudo aptitude reinstall '~i' >> $TMPLOGFILE
+}
