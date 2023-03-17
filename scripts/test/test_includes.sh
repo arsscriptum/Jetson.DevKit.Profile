@@ -8,6 +8,9 @@ rm -rf $TMPLOGFILE
 maininclude="~/scripts/includes/function_helpers.sh"
 
 if [ -d "$maininclude" ]; then
+	echo "ERROR : could not find dependency $maininclude"
+	exit 1;
+else
 	source $maininclude
 	setup_log "sourcing $maininclude"
 fi
