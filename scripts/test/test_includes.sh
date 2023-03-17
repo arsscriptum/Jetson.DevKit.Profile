@@ -17,7 +17,6 @@ fi
 
 setup_log "test includes"
 
-exit 0;
 tmpfname=`cat /dev/urandom | tr -dc '[:alpha:]' | fold -w ${1:-20} | head -n 1`
 fulltmpdir=$(printf "%s/%s" "$MYTMP" "$tmpfname" "out")
 
