@@ -18,7 +18,7 @@ fi
 
 setup_log "UPDATING LOCAL SCRIPTS"
 
-cd /home/gp/Jetson.DevKit.Profile 
+cd /home/gp/jetson
 
 git pull
 
@@ -39,7 +39,7 @@ fulltmpfile=$(printf "%s/%s.%s" "/home/gp/tmp" "$tmpfname" "out")
 setup_log "copy and save in file $fulltmpfile"
 
 validate_folder ~/scripts
-cp -R --force --update --verbose /home/gp/Jetson.DevKit.Profile/scripts/* /home/gp/scripts > $fulltmpfile
+cp -R --force --update --verbose /home/gp/jetson/scripts/* /home/gp/scripts > $fulltmpfile
 
 num_copied=`tail "$fulltmpfile" |  grep "\->" | wc -l`
 output=`tail "$fulltmpfile"`
