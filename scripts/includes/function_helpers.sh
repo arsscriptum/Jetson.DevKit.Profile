@@ -49,8 +49,8 @@ invoke_reinstall () {
 
 	setup_log "$logstring"
 	echo "$progressstring" > $TMPPROGRESSFILE
-	sudo apt-get -y --reinstall install $APP 2>> $STDERRLOG 1>> $STDOUTLOG
-	#sudo apt reinstall install $APP >> $TMPLOGFILE
+	sudo apt-get -y --reinstall install $APP 2>> $STDERRLOG
+	sudo apt reinstall install $APP 2>> $STDERRLOG
 	valueone=1
 	UPDATEDAPPS=$((UPDATEDAPPS + valueone))
 }
