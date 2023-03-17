@@ -40,9 +40,10 @@ invoke_reinstall () {
 	APP="$1"
 	export TMPPROGRESSFILE=$MYTMP/reinstall_progress.log
 	CURRENTTIME=`date`
+	PERCENTAGE=$(( (UPDATEDAPPS * 100) / TOTALAPPS )) 
 
-	logstring=$(printf "[%s / %s] reinstalling %s" "$UPDATEDAPPS" "$TOTALAPPS" "$APP")
-	progressstring=$(printf "[%s / %s]\nStarted Time %s\nCurrent Time %s" "$UPDATEDAPPS" "$TOTALAPPS" "$STARTEDDATE" "$CURRENTTIME")
+	logstring=$(printf "[%s / %s] [%s] reinstalling %s" "$UPDATEDAPPS" "$TOTALAPPS" "$PERCENTAGE" "$APP")
+	progressstring=$(printf "[%s / %s]\n%s\nStarted Time %s\nCurrent Time %s" "$UPDATEDAPPS" "$TOTALAPPS" "$PERCENTAGE" "$STARTEDDATE" "$CURRENTTIME")
 	setup_log "$logstring"
 	echo "$progressstring" > $TMPPROGRESSFILE
 	#sudo apt-get -y --reinstall install $APP >> $TMPLOGFILE

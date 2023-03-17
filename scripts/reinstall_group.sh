@@ -21,7 +21,7 @@ fi
 
 setup_log "reinstall group"
 
-startdatestr==`date`
+startdatestr=`date`
 export STARTEDDATE="$startdatestr"
 export TOTALAPPS=1807
 export UPDATEDAPPS=0
