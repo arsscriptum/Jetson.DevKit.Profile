@@ -1,9 +1,14 @@
 #!/bin/sh
 
-tmpfname=`cat /dev/urandom | tr -dc '[:alpha:]' | fold -w ${1:-20} | head -n 1`
-fulltmpfilepath=$(printf "%s/%s.%s" "/home/gp/tmp" "$tmpfname" "log")
+scriptinit=/home/gp/scripts/includes/script_init.sh
 
-export TMPLOGFILE="$fulltmpfilepath"
+if [ -d "$scriptinit" ]; then
+        echo "ERROR : could not find dependency $scriptinit"
+        exit 1;
+else
+        . $scriptinit
+        setup_log "sourcing $scriptinit"
+fi
 
 maininclude=/home/gp/scripts/includes/function_helpers.sh
 

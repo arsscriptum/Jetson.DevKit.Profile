@@ -1,0 +1,5 @@
+https://developer.nvidia.com/embedded/linux-tegra-r214
+https://developer.nvidia.com/embedded/linux-tegra-rel-21
+https://developer.nvidia.com/embedded/linux-tegra-r213
+https://developer.nvidia.com/embedded/linux-tegra-r281
+https://developer.nvidia.com/embedded/linux-tegra-r311

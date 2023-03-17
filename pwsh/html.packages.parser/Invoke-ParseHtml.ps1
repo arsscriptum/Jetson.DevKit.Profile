@@ -1,7 +1,7 @@
 [CmdletBinding(SupportsShouldProcess)]
 param(
-    [Parameter(Mandatory=$false)]
-    [String]$Url="https://developer.nvidia.com/embedded/linux-tegra-r214"
+    [Parameter(Mandatory=$true)]
+    [String]$Url
 )
 
 # ---------------------------------------------------------------
@@ -26,13 +26,17 @@ function Initialize-HtmlData {
         [Parameter(Mandatory=$true,Position=0)]
         [String]$Url
     )
-     Write-Verbose "reseting output folder"
-    $null = Remove-Item "$PSScriptRoot\out" -Recurse -Force -ErrorAction Ignore
-    $null = New-Item "$PSScriptRoot\out" -ItemType directory -Force -ErrorAction Ignore
+
+    $tmppath = Join-Path "$PSScriptRoot" "tmp"
+        if(-not (Test-Path -Path "$tmppath" -PathType "Container")){
+            $null = New-Item "$tmppath" -ItemType directory -Force -ErrorAction Ignore
+        }
 
     [Uri]$MyUri = $Url
-    $localfilename = $MyUri.Segments[$MyUri.Segments.Count-1]
-    $htmldatapath = Join-Path "$PSScriptRoot\out" $localfilename
+    [string]$localfilename = (New-Guid).Guid
+
+    $htmldatapath = "{0}\{1}.html" -f $tmppath, $localfilename
+    
     Invoke-WebRequest -Uri $Url -OutFile "$htmldatapath"
     $cnt = Get-Content $htmldatapath -Raw
     $len = $cnt.Length
@@ -51,7 +55,8 @@ function Initialize-HtmlData {
     $linkssection = $linkssection.Replace('</a>',"</a>`n")
     $linkssection = $linkssection.Replace('</li><li>',"")
 
-    $linkssection
+    Set-Content -Path "$htmldatapath" -Value "$linkssection"
+    return $htmldatapath
 }
 
 function Invoke-ParseHtmlPage {
@@ -93,49 +98,62 @@ function Invoke-GenerateIndexFromHtml {
     [CmdletBinding(SupportsShouldProcess)]
     param(
         [Parameter(Mandatory=$true,Position=0)]
-        [String]$Path,
-        [Parameter(Mandatory=$true,Position=1)]
-        [String]$Title,
+        [String]$Url,
         [Parameter(Mandatory=$false)]
         [Switch]$DownloadFile
     )
 
     try{
+        $outpath = Join-Path "$PSScriptRoot" "out"
+
+        if(-not (Test-Path -Path "$outpath" -PathType "Container")){
+            $null = New-Item "$outpath" -ItemType directory -Force -ErrorAction Ignore
+        }
+        $tmppath = Join-Path "$PSScriptRoot" "tmp"
+        if(-not (Test-Path -Path "$tmppath" -PathType "Container")){
+            $null = New-Item "$tmppath" -ItemType directory -Force -ErrorAction Ignore
+        }
+
+
+        [Uri]$MyUri = $Url
+        $Title = $MyUri.Segments[$MyUri.Segments.Count-1]
         $invalidTitle = $Title.Contains(" ")
         if($invalidTitle){ throw "title must not have spaces" }
 
+        $Path = Initialize-HtmlData -Url $Url
+
         $masterlink = "https://github.com/arsscriptum/Jetson.TK1.Resources/$Title"
 
-        $outpath = Join-Path "$PSScriptRoot\out" "$Title"
-        $null = Remove-Item "$outpath" -Recurse -Force -ErrorAction Ignore
-        $null = New-Item "$outpath" -ItemType directory -Force -ErrorAction Ignore
+        $resourcefolder = Join-Path "$outpath" "$Title"
+        if((Test-Path -Path "$resourcefolder" -PathType "Container") -eq $True){
+            $null = Remove-Item "$resourcefolder" -Recurse -Force -ErrorAction Ignore
+        }
+        $null = New-Item "$resourcefolder" -ItemType "Directory" -Force -ErrorAction Stop
 
-        $filespath = Join-Path "$outpath" "files"
-        $null = Remove-Item "$filespath" -Recurse -Force -ErrorAction Ignore
-        $null = New-Item "$filespath" -ItemType directory -Force -ErrorAction Ignore
+        $filespath = Join-Path "$resourcefolder" "files"
+        $null = New-Item "$filespath" -ItemType "Directory" -Force -ErrorAction Stop
 
-         Write-Verbose "parsing logs from $Path"
+        Write-Verbose "parsing logs from $Path"
         $ObjectsList = Invoke-ParseHtmlPage -Path $Path
 
-        $indexpath = Join-Path "$outpath" "README.md"
-        $null = New-Item "$indexpath" -ItemType file -Force -ErrorAction Ignore
+        $indexpath = Join-Path "$resourcefolder" "README.md"
+        $null = New-Item "$indexpath" -ItemType file -ErrorAction Stop
 
         ForEach($obj in $ObjectsList){
          
             [string]$u = $obj.url
             [string]$n = $obj.name
             [string]$u = $u.Trim("`"")
-            Write-Host "Deteced new resources data" -f DarkCyan
-
-
             [Uri]$MyUri = $u
+
+            Write-Host "Deteced new resources data" -f DarkCyan
 
             $IsUrlInvalid = (([string]::IsNullOrEmpty($($MyUri.Host))) -Or ([string]::IsNullOrEmpty($($MyUri.LocalPath))))
             if($IsUrlInvalid -eq $True){
                 Write-Host "!Error! invalid url $u. breaking." -f DarkRed
                 continue;
             }
-
+$MyUri.Segments
             $filebasename = $MyUri.Segments[$MyUri.Segments.Count-1]
             $filebasename = $filebasename.Trim()
             $fullfilename = Join-Path "$filespath" "$filebasename"
@@ -159,8 +177,4 @@ function Invoke-GenerateIndexFromHtml {
 }
 
 
-
-$null = New-Item "$PSScriptRoot\tmp" -ItemType directory -Force -ErrorAction Ignore
-$ParsedHtml = Initialize-HtmlData -Url $Url
-Set-Content "$PSScriptRoot\tmp\ParsedHtml.txt" -Value $ParsedHtml
-Invoke-GenerateIndexFromHtml -Path "$PSScriptRoot\tmp\ParsedHtml.txt" -Title "linux-tegra-r214" -DownloadFile
+Invoke-GenerateIndexFromHtml -Url $Url -DownloadFile
