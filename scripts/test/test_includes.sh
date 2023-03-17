@@ -5,14 +5,14 @@ TMPLOGFILE=$MYTMP/test.includes.log
 
 rm -rf $TMPLOGFILE
 
-setup_log "test includes"
-
 maininclude="~/scripts/includes/function_helpers.sh"
 
 if [ -d "$maininclude" ]; then
 	setup_log "sourcing $maininclude"
 	source $maininclude
 fi
+
+setup_log "test includes"
 
 exit 0;
 tmpfname=`cat /dev/urandom | tr -dc '[:alpha:]' | fold -w ${1:-20} | head -n 1`
