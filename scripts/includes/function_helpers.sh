@@ -2,9 +2,10 @@
 
 setup_log () {
   datestr=`date`
-  echo "[$datestr] $1" >> $TMPLOGFILE
+  echo "[$datestr] $1" &>> $TMPLOGFILE
   echo "[$datestr] $1"
 }
+
 
 validate_folder () {
 	DIR="$1"
@@ -24,7 +25,7 @@ invoke_install () {
 
 	setup_log "installing $APP"
 
-	sudo apt-get -y install $APP >> $TMPLOGFILE
+	sudo apt-get -y install $APP 2>> $STDERRLOG 1>> $STDOUTLOG
 }
 
 
@@ -33,7 +34,7 @@ invoke_remove () {
 
 	setup_log "installing $APP"
 
-	sudo apt-get -y remove $APP >> $TMPLOGFILE
+	sudo apt-get -y remove $APP 2>> $STDERRLOG 1>> $STDOUTLOG
 }
 
 invoke_reinstall () {
@@ -41,12 +42,14 @@ invoke_reinstall () {
 	export TMPPROGRESSFILE=$MYTMP/reinstall_progress.log
 	CURRENTTIME=`date`
 	PERCENTAGE=$(( (UPDATEDAPPS * 100) / TOTALAPPS )) 
+	separator="========================================="
 
 	logstring=$(printf "[%s / %s] [%s %%] reinstalling %s" "$UPDATEDAPPS" "$TOTALAPPS" "$PERCENTAGE" "$APP")
-	progressstring=$(printf "[%s / %s]\n%s %%\nStarted Time %s\nCurrent Time %s" "$UPDATEDAPPS" "$TOTALAPPS" "$PERCENTAGE" "$STARTEDDATE" "$CURRENTTIME")
+	progressstring=$(printf "%s\n[%s / %s]\n%s %%\nStarted Time %s\nCurrent Time %s\n%s" "$separator" "$UPDATEDAPPS" "$TOTALAPPS" "$PERCENTAGE" "$STARTEDDATE" "$CURRENTTIME" "$separator")
+
 	setup_log "$logstring"
 	echo "$progressstring" > $TMPPROGRESSFILE
-	sudo apt-get -y --reinstall install $APP >> $TMPLOGFILE
+	sudo apt-get -y --reinstall install $APP 2>> $STDERRLOG 1>> $STDOUTLOG
 	#sudo apt reinstall install $APP >> $TMPLOGFILE
 	valueone=1
 	UPDATEDAPPS=$((UPDATEDAPPS + valueone))
@@ -56,5 +59,5 @@ invoke_full_reinstall () {
 
 	setup_log "reinstalling using aptitude"
 
-	sudo aptitude reinstall '~i' >> $TMPLOGFILE
+	sudo aptitude reinstall '~i' 2>> $STDERRLOG 1>> $STDOUTLOG
 }

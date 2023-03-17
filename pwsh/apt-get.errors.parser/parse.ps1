@@ -39,23 +39,25 @@ $script = @"
 
 #!/bin/sh
 
-# generate a random string
-tmpfname=``cat /dev/urandom | tr -dc '[:alpha:]' | fold -w `${1:-20} | head -n 1``
+scriptinit=/home/gp/scripts/includes/function_helpers.sh
 
-# create a unique filename in tmp folder for logs
-fulltmpfile=`$(printf "%s/%s.%s" "`$MYTMP" "`$tmpfname" "out")
+if [ -d "$scriptinit" ]; then
+        echo "ERROR : could not find dependency $scriptinit"
+        exit 1;
+else
+        . $scriptinit
+        setup_log "sourcing $scriptinit"
+fi
 
-# export the filename
-export TMPLOGFILE=`$fulltmpfile
 
 maininclude=/home/gp/scripts/includes/function_helpers.sh
 
-if [ -d "`$maininclude" ]; then
-        echo "ERROR : could not find dependency `$maininclude"
+if [ -d "$maininclude" ]; then
+        echo "ERROR : could not find dependency $maininclude"
         exit 1;
 else
-        . `$maininclude
-        setup_log "sourcing `$maininclude"
+        . $maininclude
+        setup_log "sourcing $maininclude"
 fi
 
 setup_log "reinstall group"
