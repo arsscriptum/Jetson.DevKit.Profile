@@ -27,45 +27,55 @@ function Initialize-HtmlData {
         [String]$Url
     )
 
-    $tmppath = Join-Path "$PSScriptRoot" "tmp"
+    try{
+        $tmppath = Join-Path "$PSScriptRoot" "tmp"
         if(-not (Test-Path -Path "$tmppath" -PathType "Container")){
             $null = New-Item "$tmppath" -ItemType directory -Force -ErrorAction Ignore
         }
 
-    [Uri]$MyUri = $Url
-    [string]$localfilename = (New-Guid).Guid
+        [string]$UrlBaseName = (New-Guid).Guid
 
-    $htmldatapath = "{0}\{1}.html" -f $tmppath, $localfilename
-    
-    Invoke-WebRequest -Uri $Url -OutFile "$htmldatapath"
-    $cnt = Get-Content $htmldatapath -Raw
-    $len = $cnt.Length
+        [Uri]$MyUri = $Url
+        $IsUrlInvalid = (([string]::IsNullOrEmpty($($MyUri.Host))) -Or ([string]::IsNullOrEmpty($($MyUri.LocalPath))))
+        if($IsUrlInvalid -eq $False){
+            $UrlBaseName = $MyUri.Segments[$MyUri.Segments.Count-1]
+        }
 
-    $ihead = $cnt.IndexOf('</head><body')
-    $datasection = $cnt.SubString($ihead, $len - $ihead)
+        $htmldatapath = "{0}\{1}.html" -f $tmppath, $UrlBaseName
+        
+        Invoke-WebRequest -Uri $Url -OutFile "$htmldatapath"
+        $cnt = Get-Content $htmldatapath -Raw
+        $len = $cnt.Length
 
-    $datasection = $datasection.Replace('/embedded/','https://developer.nvidia.com/embedded/')
-    $datasection = $datasection.Replace("<a target=","<a")
-    $datasection = $datasection.Replace("`"_blank`"","")
+        $ihead = $cnt.IndexOf('</head><body')
+        $datasection = $cnt.SubString($ihead, $len - $ihead)
 
-    $firstdllink = $datasection.IndexOf('Quick Start Guide')
-    Write-Verbose "Quick Start Guide. firstdllink $firstdllink"
-    $lastdllink = $datasection.LastIndexOf('Release SHA Hashes')
-    Write-Verbose "Release SHA Hashes. lastdllink $lastdllink"
+        $datasection = $datasection.Replace('/embedded/','https://developer.nvidia.com/embedded/')
+        $datasection = $datasection.Replace("<a target=","<a")
+        $datasection = $datasection.Replace("`"_blank`"","")
 
-    $len = $datasection.Length
-    $ilinks = $datasection.LastIndexOf('<a href',$firstdllink)
-    $elinks = $datasection.IndexOf('</a>',$lastdllink)
-    Write-Verbose "first link index $ilinks"
-    Write-Verbose "last link index $elinks"
-    $linkssection = $datasection.SubString($ilinks, $elinks - $ilinks)
-    $linkssection = $linkssection.Replace('<a href',"`n<a href")
-    $linkssection = $linkssection.Replace('</a>',"</a>`n")
-    $linkssection = $linkssection.Replace('</li><li>',"")
+        $firstdllink = $datasection.IndexOf('Quick Start Guide')
+        Write-Verbose "Quick Start Guide. firstdllink $firstdllink"
+        $lastdllink = $datasection.LastIndexOf('Release SHA Hashes')
+        Write-Verbose "Release SHA Hashes. lastdllink $lastdllink"
 
-    Set-Content -Path "$htmldatapath" -Value "$linkssection"
-    return $htmldatapath
+        $len = $datasection.Length
+        $ilinks = $datasection.LastIndexOf('<a href',$firstdllink)
+        $elinks = $datasection.IndexOf('</a>',$lastdllink)
+        Write-Verbose "first link index $ilinks"
+        Write-Verbose "last link index $elinks"
+        $linkssection = $datasection.SubString($ilinks, $elinks - $ilinks)
+        $linkssection = $linkssection.Replace('<a href',"`n<a href")
+        $linkssection = $linkssection.Replace('</a>',"</a>`n")
+        $linkssection = $linkssection.Replace('</li><li>',"")
+
+        Set-Content -Path "$htmldatapath" -Value "$linkssection"
+        return $htmldatapath
+    }catch{
+        Show-ExceptionDetails $_ -ShowStack
+    }
 }
+
 
 function Invoke-ParseHtmlPage {
 
@@ -119,7 +129,7 @@ function Invoke-GenerateIndexFromHtml {
         }
 
         $tmppath = Join-Path "$PSScriptRoot" "tmp"
-         $null = Remove-Item "$tmppath" -Recurse -Force -ErrorAction Ignore
+        # $null = Remove-Item "$tmppath" -Recurse -Force -ErrorAction Ignore
         if(-not (Test-Path -Path "$tmppath" -PathType "Container")){
             $null = New-Item "$tmppath" -ItemType directory -Force -ErrorAction Ignore
         }
@@ -158,7 +168,7 @@ function Invoke-GenerateIndexFromHtml {
 
             $IsUrlInvalid = (([string]::IsNullOrEmpty($($MyUri.Host))) -Or ([string]::IsNullOrEmpty($($MyUri.LocalPath))))
             $filebasename = ''
-            $IsUrlInvalid = (([string]::IsNullOrEmpty($($MyUri.Host))) -Or ([string]::IsNullOrEmpty($($MyUri.LocalPath))))
+            
             if($IsUrlInvalid -eq $True){
                 if(($u.LastIndexOf('/')) -ne -1){
                     $lastslashid = $u.LastIndexOf('/') + 1
