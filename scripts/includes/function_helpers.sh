@@ -46,7 +46,7 @@ invoke_reinstall () {
 	progressstring=$(printf "[%s / %s]\n%s %%\nStarted Time %s\nCurrent Time %s" "$UPDATEDAPPS" "$TOTALAPPS" "$PERCENTAGE" "$STARTEDDATE" "$CURRENTTIME")
 	setup_log "$logstring"
 	echo "$progressstring" > $TMPPROGRESSFILE
-	#sudo apt-get -y --reinstall install $APP >> $TMPLOGFILE
+	sudo apt-get -y --reinstall install $APP >> $TMPLOGFILE
 	#sudo apt reinstall install $APP >> $TMPLOGFILE
 	valueone=1
 	UPDATEDAPPS=$((UPDATEDAPPS + valueone))
