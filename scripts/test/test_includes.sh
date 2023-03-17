@@ -5,15 +5,14 @@ TMPLOGFILE=$MYTMP/test.includes.log
 
 rm -rf $TMPLOGFILE
 
-maininclude="~/scripts/includes/function_helpers.sh"
+maininclude=/home/gp/scripts/includes/function_helpers.sh
 
 if [ -d "$maininclude" ]; then
-	echo "ERROR : could not find dependency $maininclude"
-	exit 1;
+        echo "ERROR : could not find dependency $maininclude"
+        exit 1;
 else
-	$maininclude
-	source $maininclude
-	setup_log "sourcing $maininclude"
+        . $maininclude
+        setup_log "sourcing $maininclude"
 fi
 
 setup_log "test includes"
