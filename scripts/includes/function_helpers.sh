@@ -38,11 +38,14 @@ invoke_remove () {
 
 invoke_reinstall () {
 	APP="$1"
+	
+	logstring=$(printf "[%s / %s] reinstalling %s" "$UPDATEDAPPS" "$TOTALAPPS" "$APP")
+	setup_log "$logstring"
 
-	setup_log "reinstalling $APP"
-
-	sudo apt-get -y --reinstall install $APP >> $TMPLOGFILE
+	#sudo apt-get -y --reinstall install $APP >> $TMPLOGFILE
 	#sudo apt reinstall install $APP >> $TMPLOGFILE
+	valueone=1
+	UPDATEDAPPS=$((UPDATEDAPPS + valueone))
 }
 
 invoke_full_reinstall () {
