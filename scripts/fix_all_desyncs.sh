@@ -57,3 +57,5 @@ invoke_packages_reprocessing () {
 
 
 invoke_reconfigure_packages_sources
+
+invoke_packages_reprocessing
