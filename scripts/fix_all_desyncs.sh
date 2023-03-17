@@ -21,29 +21,39 @@ fi
 
 
 
-setup_log "Run the upgrade (which will fail)" 
+invoke_reconfigure_packages_sources () {
 
-sudo apt-get upgrade >> $TMPLOGFILE
+	sudo rm -f /etc/apt/sources.list.d/* >> $TMPLOGFILE
 
-setup_log "Then install the files we can from the cache (will succeed for some, but fail for others)"
+	sudo dpkg --configure -a >> $TMPLOGFILE
+}
 
-sudo dpkg -i /var/cache/apt/archives/*.deb >> $TMPLOGFILE
+invoke_packages_reprocessing () {
 
-setup_log "Reconfigure it and other packages (will mostly succeed)"
+	setup_log "Run the upgrade (which will fail)" 
 
-sudo dpkg --configure -a >> $TMPLOGFILE
+	sudo apt-get upgrade >> $TMPLOGFILE
 
-setup_log "Make a bit more more progress from cache (succeed for some, fail for others)"
+	setup_log "Then install the files we can from the cache (will succeed for some, but fail for others)"
 
-sudo dpkg -i /var/cache/apt/archives/*.deb >> $TMPLOGFILE
+	sudo dpkg -i /var/cache/apt/archives/*.deb >> $TMPLOGFILE
 
-setup_log "Now run another upgrade which will download needed packages (will fail on install)"
+	setup_log "Reconfigure it and other packages (will mostly succeed)"
 
-sudo apt-get upgrade >> $TMPLOGFILE
+	sudo dpkg --configure -a >> $TMPLOGFILE
 
-setup_log "Install again from cache (will succeed!)"
+	setup_log "Make a bit more more progress from cache (succeed for some, fail for others)"
 
-sudo dpkg -i /var/cache/apt/archives/*.deb
+	sudo dpkg -i /var/cache/apt/archives/*.deb >> $TMPLOGFILE
 
-sudo rm -f /etc/apt/sources.list.d/*
-sudo dpkg --configure -a
+	setup_log "Now run another upgrade which will download needed packages (will fail on install)"
+
+	sudo apt-get upgrade >> $TMPLOGFILE
+
+	setup_log "Install again from cache (will succeed!)"
+
+	sudo dpkg -i /var/cache/apt/archives/*.deb >> $TMPLOGFILE
+}
+
+
+invoke_reconfigure_packages_sources
