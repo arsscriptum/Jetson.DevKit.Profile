@@ -8,8 +8,8 @@ rm -rf $TMPLOGFILE
 maininclude="~/scripts/includes/function_helpers.sh"
 
 if [ -d "$maininclude" ]; then
-	setup_log "sourcing $maininclude"
 	source $maininclude
+	setup_log "sourcing $maininclude"
 fi
 
 setup_log "test includes"
