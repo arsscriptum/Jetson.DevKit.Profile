@@ -29,6 +29,8 @@ setup_log "UPDATING LOCAL SCRIPTS"
 
 cd ~/Jetson.DevKit.Profile 
 
+git pull
+
 varzero=0
 conflicted=`git status | grep 'both modified:' | wc -l`
 
