@@ -44,12 +44,20 @@ function Initialize-HtmlData {
     $ihead = $cnt.IndexOf('</head><body')
     $datasection = $cnt.SubString($ihead, $len - $ihead)
 
-    $firstdllink = $datasection.IndexOf('download.nvidia.com')
-    $lastdllink = $datasection.LastIndexOf('download.nvidia.com')
+    $datasection = $datasection.Replace('/embedded/','https://developer.nvidia.com/embedded/')
+    $datasection = $datasection.Replace("<a target=","<a")
+    $datasection = $datasection.Replace("`"_blank`"","")
+
+    $firstdllink = $datasection.IndexOf('Quick Start Guide')
+    Write-Verbose "Quick Start Guide. firstdllink $firstdllink"
+    $lastdllink = $datasection.LastIndexOf('Release SHA Hashes')
+    Write-Verbose "Release SHA Hashes. lastdllink $lastdllink"
 
     $len = $datasection.Length
     $ilinks = $datasection.LastIndexOf('<a href',$firstdllink)
     $elinks = $datasection.IndexOf('</a>',$lastdllink)
+    Write-Verbose "first link index $ilinks"
+    Write-Verbose "last link index $elinks"
     $linkssection = $datasection.SubString($ilinks, $elinks - $ilinks)
     $linkssection = $linkssection.Replace('<a href',"`n<a href")
     $linkssection = $linkssection.Replace('</a>',"</a>`n")
@@ -109,7 +117,9 @@ function Invoke-GenerateIndexFromHtml {
         if(-not (Test-Path -Path "$outpath" -PathType "Container")){
             $null = New-Item "$outpath" -ItemType directory -Force -ErrorAction Ignore
         }
+
         $tmppath = Join-Path "$PSScriptRoot" "tmp"
+         $null = Remove-Item "$tmppath" -Recurse -Force -ErrorAction Ignore
         if(-not (Test-Path -Path "$tmppath" -PathType "Container")){
             $null = New-Item "$tmppath" -ItemType directory -Force -ErrorAction Ignore
         }
@@ -121,8 +131,6 @@ function Invoke-GenerateIndexFromHtml {
         if($invalidTitle){ throw "title must not have spaces" }
 
         $Path = Initialize-HtmlData -Url $Url
-
-        $masterlink = "https://github.com/arsscriptum/Jetson.TK1.Resources/$Title"
 
         $resourcefolder = Join-Path "$outpath" "$Title"
         if((Test-Path -Path "$resourcefolder" -PathType "Container") -eq $True){
@@ -149,15 +157,21 @@ function Invoke-GenerateIndexFromHtml {
             Write-Host "Deteced new resources data" -f DarkCyan
 
             $IsUrlInvalid = (([string]::IsNullOrEmpty($($MyUri.Host))) -Or ([string]::IsNullOrEmpty($($MyUri.LocalPath))))
+            $filebasename = ''
+            $IsUrlInvalid = (([string]::IsNullOrEmpty($($MyUri.Host))) -Or ([string]::IsNullOrEmpty($($MyUri.LocalPath))))
             if($IsUrlInvalid -eq $True){
-                Write-Host "!Error! invalid url $u. breaking." -f DarkRed
-                continue;
+                if(($u.LastIndexOf('/')) -ne -1){
+                    $lastslashid = $u.LastIndexOf('/') + 1
+                    $filebasename = $u.SubString($lastslashid)
+                }
+            }else{
+                $filebasename = $MyUri.Segments[$MyUri.Segments.Count-1]
             }
 
-            $filebasename = $MyUri.Segments[$MyUri.Segments.Count-1]
             $filebasename = $filebasename.Trim()
             $fullfilename = Join-Path "$filespath" "$filebasename"
-            $link = "{0}/files/{1}" -f $masterlink, $localfilename
+            $masterlink = "http://jetson.distrib.server/jetson/linux-tegra-r214"
+            $link = "{0}/files/{1}" -f $masterlink, $filebasename
 
             Write-Host "`t`"$n`" added to index file" -f Gray
             $MdStr = "- [{0}]({1})" -f $n, $link
@@ -176,4 +190,4 @@ function Invoke-GenerateIndexFromHtml {
 }
 
 
-Invoke-GenerateIndexFromHtml -Url $Url -DownloadFile
+Invoke-GenerateIndexFromHtml -Url $Url 
