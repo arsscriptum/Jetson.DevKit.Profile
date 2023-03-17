@@ -11,8 +11,6 @@ setup_log () {
   echo "[$datestr] $1"
 }
 
-
-
 validate_folder () {
 	DIR="$1"
 
@@ -20,13 +18,13 @@ validate_folder () {
 
 	if [ ! -d "$DIR" ]; then
 		setup_log "creating $DIR"
-	    sudo mkdir $DIR
+	   	mkdir $DIR
 	fi
 	setup_log "setting rights on $DIR"
-	sudo chmod -R u=rwx,go=rx $DIR
+	chmod -R 755 $DIR
 }
 
-
+	
 setup_log "SETTING UP TOOLCHAIN"
 
 
@@ -39,7 +37,7 @@ echo "DOWNLOADING TOOLCHAIN"
 wget https://developer.nvidia.com/embedded/jetson-linux/bootlin-toolchain-gcc-93 -O ~/dev/toolchain-setup/toolchain-gcc.tar.gz
 
 echo "EXTRACTING TOOLCHAIN TO $HOME/l4t-gcc"
-tar -xf ~/dev/toolchain-setup/toolchain-gcc.tar.gz --directory $HOME/l4t-gcc
+tar -xf ~/dev/toolchain-setup/toolchain-gcc.tar.gz --directory ~/l4t-gcc
 
 export CROSS_COMPILE=$HOME/l4t-gcc/bin/aarch64-buildroot-linux-gnu-
 

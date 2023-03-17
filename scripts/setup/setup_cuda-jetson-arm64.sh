@@ -11,20 +11,28 @@ setup_log () {
   echo "[$datestr] $1"
 }
 
+validate_folder () {
+	DIR="$1"
+
+	setup_log "validate_folder $DIR"
+
+	if [ ! -d "$DIR" ]; then
+		setup_log "creating $DIR"
+	   	mkdir $DIR
+	fi
+	setup_log "setting rights on $DIR"
+	chmod -R 755 $DIR
+}
+
 
 setup_log "CUDA Toolkit 12.1 Downloads"
 
 
 setup_log "check dir ~/dev/cuda"
-mkdir ~/dev/cuda
-sudo chmod -R u=rwx,go=rx ~/dev/cuda
+validate_folder ~/dev/cuda
 cd ~/dev/cuda
 
-
-setup_log "check dir ~/dev/cuda/download"
-mkdir ~/dev/cuda/download
-sudo chmod -R u=rwx,go=rx ~/dev/cuda/download
-
+validate_folder ~/dev/cuda/download
 
 setup_log "start download cuda-ubuntu2204.pin to ~/dev/cuda/download/cuda-ubuntu2204.pin"
 wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/sbsa/cuda-ubuntu2204.pin -O ~/dev/cuda/download/cuda-ubuntu2204.pin -o $TMYMP/cudaout.log

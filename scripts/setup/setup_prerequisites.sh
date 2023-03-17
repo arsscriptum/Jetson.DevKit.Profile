@@ -11,97 +11,93 @@ setup_log () {
   echo "[$datestr] $1"
 }
 
+validate_folder () {
+	DIR="$1"
 
+	setup_log "validate_folder $DIR"
 
-setup_log "PreRequesites Update Startup"
+	if [ ! -d "$DIR" ]; then
+		setup_log "creating $DIR"
+	   	mkdir $DIR
+	fi
+	setup_log "setting rights on $DIR"
+	chmod -R 755 $DIR
+}
+
+invoke_install () {
+	APP="$1"
+
+	setup_log "installing $APP"
+
+	sudo apt-get -y install $APP >> $TMPLOGFILE
+}
+
 
 sudo DEBIAN_FRONTEND=noninteractive apt-get install -qq python-software-properties < /dev/null > /dev/null
 
-setup_log "========== APT-GET UPDATE START ========="
-sudo apt update
+setup_log "full update"
+sudo apt update >> $TMPLOGFILE
 
-setup_log "========== APT-GET UPGRADE START ========="
-sudo apt upgrade
-sudo apt-get autoremove
+setup_log "full upgrade"
+sudo apt upgrade >> $TMPLOGFILE
 
+sudo apt-get autoremove >> $TMPLOGFILE
 
-setup_log "========== INITIALIZATION DONE ========="
+invoke_install git
+invoke_install cmake
+invoke_install python3-dev
+invoke_install nano
 
+invoke_install libhdf5-serial-dev
+invoke_install hdf5-tools
+invoke_install libhdf5-dev
+invoke_install zlib1g-dev
+invoke_install zip
+invoke_install libjpeg8-dev
 
-setup_log "========== INSTALLATION STEP 1 START ========="
-sudo apt-get --assume-yes install git
-sudo apt-get --assume-yes install cmake
-sudo apt-get --assume-yes install python3-dev
-sudo apt-get --assume-yes install nano
-sudo apt-get autoremove
+invoke_install libjpeg-dev 
+invoke_install zlib1g-dev
+invoke_install libpython3-dev
+invoke_install libavcodec-dev
+invoke_install libavformat-dev
+invoke_install libswscale-dev
 
-setup_log "========== STEP 1 TERMINATED ========="
+invoke_install python3.5
+invoke_install python2.7
 
+invoke_install python-pip
+invoke_install python-pip3
 
-setup_log "========== INSTALLATION STEP 2 START ========="
-sudo apt-get --assume-yes install libhdf5-serial-dev
-sudo apt-get --assume-yes install hdf5-tools
-sudo apt-get --assume-yes install libhdf5-dev
-sudo apt-get --assume-yes install zlib1g-dev
-sudo apt-get --assume-yes install zip
-sudo apt-get --assume-yes install libjpeg8-dev
-sudo apt-get autoremove
+invoke_install zram-config
 
-
-setup_log "========== STEP 2 TERMINATED ========="
-
-setup_log "========== INSTALLATION STEP 3 START ========="
-sudo apt-get --assume-yes install libjpeg-dev zlib1g-dev libpython3-dev libavcodec-dev libavformat-dev libswscale-dev
-setup_log "========== STEP 3 TERMINATED ========="
-
-sudo apt-get autoremove
-
-setup_log "========== PYTHON 3.5 =========="
-sudo apt-get --assume-yes install python3.5
-setup_log "========== PYTHON 2.7 =========="
-sudo apt-get --assume-yes install python2.7
+sudo apt-get autoremove >> $TMPLOGFILE
 
 if ! [ -x "$(command -v pip)" ]; then
   echo 'Error: pip is not installed.' >&2
-  sudo apt-get install python-pip
+  exit 1;
 else
 	setup_log "pip is installed"
 fi
 
 if ! [ -x "$(command -v pip3)" ]; then
   echo 'Error: pip3 is not installed.' >&2
-  sudo apt-get install python3-pip
+  exit 1;
 else
 	setup_log "pip3 is installed"
 fi
 
-setup_log "========== SETTING UP TOOLS ========="
-setup_log "pip3 install ; pip, testresources setuptools ; "
-sudo pip3 install -U pip testresources setuptools
+setup_log "virtual env ... pip stuff"
 
-setup_log " virtualenv virtualenvwrapper "
+sudo pip3 install -U pip testresources setuptools
 sudo pip install virtualenv virtualenvwrapper
 
-setup_log " SETTING ENVIRONMENT VALUES ... "
+setup_log "setting environment values."
 
 # virtualenv and virtualenvwrapper
 export WORKON_HOME=$HOME/.virtualenvs
 export VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3
 source /usr/local/bin/virtualenvwrapper.sh
 
-setup_log "RELOADING PROFILE"
+setup_log "reloading profile"
 source ~/.bashrc
-
-
-setup_log "INSTALLING zram-config"
-sudo apt-get --assume-yes install zram-config
-
-
-
-
-setup_log "================================================="
-
-setup_log "========== PREREQUESITS SCRIPT COMPLETE ========="
-setup_log "================================================="
-
 

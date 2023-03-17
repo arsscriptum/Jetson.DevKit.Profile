@@ -18,20 +18,15 @@ validate_folder () {
 
 	if [ ! -d "$DIR" ]; then
 		setup_log "creating $DIR"
-	    sudo mkdir $DIR
+	   	mkdir $DIR
 	fi
 	setup_log "setting rights on $DIR"
-	sudo chmod -R u=rwx,go=rx $DIR
+	chmod -R 755 $DIR
 }
-
-
-setup_log "CUDA SOURCE DOWNLOAD"
 
 validate_folder ~/dev/cuda
 validate_folder ~/dev/cuda/download
 validate_folder ~/dev/cuda/cuda-src
-
-
 
 setup_log "Downloading cuda_gdb_src-all-all-12.1.55.tar.gz source package to ~/dev/cuda/download/cuda_gdb_src-all-all-12.1.55.tar.gz"
 

@@ -11,8 +11,6 @@ setup_log () {
   echo "[$datestr] $1"
 }
 
-
-
 validate_folder () {
 	DIR="$1"
 
@@ -20,10 +18,10 @@ validate_folder () {
 
 	if [ ! -d "$DIR" ]; then
 		setup_log "creating $DIR"
-	    sudo mkdir $DIR
+	   	mkdir $DIR
 	fi
 	setup_log "setting rights on $DIR"
-	sudo chmod -R u=rwx,go=rx $DIR
+	chmod -R 755 $DIR
 }
 
 
@@ -33,7 +31,6 @@ setup_log "CUDA Toolkit 12.1 Downloads"
 validate_folder ~/dev/cuda
 validate_folder ~/dev/cuda/download
 validate_folder ~/dev/cuda/cuda-src
-
 
 
 wget https://developer.download.nvidia.com/compute/cuda/12.1.0/local_installers/cuda-repo-cross-sbsa-ubuntu2204-12-1-local_12.1.0-1_all.deb -O ~/dev/cuda/download/cuda-repo-cross-sbsa-ubuntu2204-12-1-local_12.1.0-1_all.deb -o $TMYMP/cudaout.log

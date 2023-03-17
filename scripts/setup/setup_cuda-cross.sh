@@ -11,8 +11,6 @@ setup_log () {
   echo "[$datestr] $1"
 }
 
-
-
 validate_folder () {
 	DIR="$1"
 
@@ -20,16 +18,14 @@ validate_folder () {
 
 	if [ ! -d "$DIR" ]; then
 		setup_log "creating $DIR"
-	    sudo mkdir $DIR
+	   	mkdir $DIR
 	fi
 	setup_log "setting rights on $DIR"
-	sudo chmod -R u=rwx,go=rx $DIR
+	chmod -R 755 $DIR
 }
 
 
-
 setup_log "CUDA Toolkit 12.1 CROSS setup"
-
 
 
 validate_folder ~/dev/cuda
