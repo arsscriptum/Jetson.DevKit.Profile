@@ -1,6 +1,6 @@
 #!/bin/sh
 
-scriptinit=/home/gp/scripts/includes/function_helpers.sh
+scriptinit=/home/gp/scripts/includes/script_init.sh
 
 if [ -d "$scriptinit" ]; then
         echo "ERROR : could not find dependency $scriptinit"
