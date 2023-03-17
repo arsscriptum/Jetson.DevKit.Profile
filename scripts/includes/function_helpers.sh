@@ -39,7 +39,7 @@ invoke_remove () {
 invoke_reinstall () {
 	APP="$1"
 	export TMPPROGRESSFILE=$MYTMP/reinstall_progress.log
-	export CURRENTTIME=`date`
+	CURRENTTIME=`date`
 
 	logstring=$(printf "[%s / %s] reinstalling %s" "$UPDATEDAPPS" "$TOTALAPPS" "$APP")
 	progressstring=$(printf "[%s / %s]\nStarted Time %s\nCurrent Time %s" "$UPDATEDAPPS" "$TOTALAPPS" "$STARTEDDATE" "$CURRENTTIME")
