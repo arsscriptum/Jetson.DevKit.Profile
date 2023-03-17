@@ -153,7 +153,7 @@ function Invoke-GenerateIndexFromHtml {
                 Write-Host "!Error! invalid url $u. breaking." -f DarkRed
                 continue;
             }
-$MyUri.Segments
+
             $filebasename = $MyUri.Segments[$MyUri.Segments.Count-1]
             $filebasename = $filebasename.Trim()
             $fullfilename = Join-Path "$filespath" "$filebasename"
@@ -165,10 +165,9 @@ $MyUri.Segments
 
             if($DownloadFile){
                 Write-Host "`tdownloading asset `"$filebasename`""
-                #$ProgressPreference = 'SilentlyContinue'
-                #Invoke-WebRequest -Uri "$u"  -OutFile "$fullfilename" | out-null
-                #$ProgressPreference = 'Continue'
-                Set-Content -Path "$fullfilename" -Value "data"
+                $ProgressPreference = 'SilentlyContinue'
+                Invoke-WebRequest -Uri "$u"  -OutFile "$fullfilename" | out-null
+                $ProgressPreference = 'Continue'
             }
         }
     }catch{
