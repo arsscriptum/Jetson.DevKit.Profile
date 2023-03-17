@@ -11,6 +11,8 @@ if [ -d "$maininclude" ]; then
 	echo "ERROR : could not find dependency $maininclude"
 	exit 1;
 else
+	. "$maininclude"
+	$maininclude
 	source $maininclude
 	setup_log "sourcing $maininclude"
 fi
