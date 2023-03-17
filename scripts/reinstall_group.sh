@@ -1,5 +1,14 @@
 #!/bin/sh
 
+# generate a random string
+tmpfname=`cat /dev/urandom | tr -dc '[:alpha:]' | fold -w ${1:-20} | head -n 1`
+
+# create a unique filename in tmp folder for logs
+fulltmpfile=$(printf "%s/%s.%s" "$MYTMP" "$tmpfname" "out")
+
+# export the filename
+export TMPLOGFILE=$fulltmpfile
+
 maininclude=/home/gp/scripts/includes/function_helpers.sh
 
 if [ -d "$maininclude" ]; then
@@ -12,10 +21,6 @@ fi
 
 setup_log "reinstall group"
 
-tmpfname=`cat /dev/urandom | tr -dc '[:alpha:]' | fold -w ${1:-20} | head -n 1`
-fulltmpfile=$(printf "%s/%s.%s" "$MYTMP" "$tmpfname" "out")
-
-setup_log "tmp file $fulltmpfile"
 
 invoke_reinstall "libxcomposite-dev"
 invoke_reinstall "gnome-power-manager"
