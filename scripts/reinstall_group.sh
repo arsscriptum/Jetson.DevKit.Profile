@@ -21,7 +21,7 @@ fi
 
 setup_log "reinstall group"
 
-export TOTALAPPS=1810
+export TOTALAPPS=1807
 export UPDATEDAPPS=0
 
 invoke_reinstall "libxcomposite-dev"
