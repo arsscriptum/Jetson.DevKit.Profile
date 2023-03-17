@@ -1,33 +1,24 @@
 #!/bin/sh
 
-datestr=`date`
-TMPLOGFILE=$MYTMP/updatescripts.log
+tmpfname=`cat /dev/urandom | tr -dc '[:alpha:]' | fold -w ${1:-20} | head -n 1`
+fulltmpfilepath=$(printf "%s/%s.%s" "/home/gp/tmp" "$tmpfname" "log")
 
-rm -rf $TMPLOGFILE
+export TMPLOGFILE="$fulltmpfilepath"
 
-setup_log () {
-  datestr=`date`
-  echo "[$datestr] $1" >> $TMPLOGFILE
-  echo "[$datestr] $1"
-}
+maininclude=/home/gp/scripts/includes/function_helpers.sh
 
-validate_folder () {
-	DIR="$1"
-
-	setup_log "validate_folder $DIR"
-
-	if [ ! -d "$DIR" ]; then
-		setup_log "creating $DIR"
-	   	mkdir $DIR
-	fi
-	setup_log "setting rights on $DIR"
-	chmod -R 755 $DIR
-}
+if [ -d "$maininclude" ]; then
+        echo "ERROR : could not find dependency $maininclude"
+        exit 1;
+else
+        . $maininclude
+        setup_log "sourcing $maininclude"
+fi
 
 
 setup_log "UPDATING LOCAL SCRIPTS"
 
-cd ~/Jetson.DevKit.Profile 
+cd /home/gp/Jetson.DevKit.Profile 
 
 git pull
 
@@ -43,12 +34,12 @@ if [ $conflicted -gt $varzero ];
 fi
 
 tmpfname=`cat /dev/urandom | tr -dc '[:alpha:]' | fold -w ${1:-20} | head -n 1`
-fulltmpfile=$(printf "%s/%s.%s" "$MYTMP" "$tmpfname" "out")
+fulltmpfile=$(printf "%s/%s.%s" "/home/gp/tmp" "$tmpfname" "out")
 
 setup_log "copy and save in file $fulltmpfile"
 
 validate_folder ~/scripts
-cp -R --force --update --verbose ~/Jetson.DevKit.Profile/scripts/* ~/scripts > $fulltmpfile
+cp -R --force --update --verbose /home/gp/Jetson.DevKit.Profile/scripts/* /home/gp/scripts > $fulltmpfile
 
 num_copied=`tail "$fulltmpfile" |  grep "\->" | wc -l`
 output=`tail "$fulltmpfile"`
