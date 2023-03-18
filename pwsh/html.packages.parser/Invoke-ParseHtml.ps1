@@ -22,7 +22,7 @@ param(
 # ---------------------------------------------------------------
 
 $Script:EnableTestCode  = $True
-$Script:CompareHtmlData = $True 
+$Script:CompareHtmlData = $False 
 
 
 
@@ -174,30 +174,141 @@ function Initialize-HtmlData {
 
         [int]$numchars = $len - $ihead
         Write-Verbose "cutting data $numchars chars from $ihead"
-        $datasection = $cnt.SubString($ihead, $numchars)
+        [string]$datasection = "$cnt".SubString($ihead, $numchars).Clone()
 
         $inprogresspath0 = "{0}\{1}.html" -f $tmppath, "inprogress_0"
+        Write-Verbose "Saving HtmlTextData in file `"$inprogresspath0`""
         Set-Content -Path "$inprogresspath0" -Value "$datasection"
+
+
+        $SpecialLogString = @"
+
+=====================================================
+              New code starts here                   
+=====================================================
+
+"@
+        Write-Verbose "$SpecialLogString"
         [System.Collections.ArrayList]$PositionList = [System.Collections.ArrayList]::new()
         $PositionList = Get-HtmlAnchorsPositions -Path "$inprogresspath0" 
         $PositionListCount = $PositionList.Count
 
-        [System.Collections.ArrayList]$ErrorList = Get-HtmlAnchorsErrors -Text "$datasection" -Positions $PositionList
-        $ErrorListCount = $ErrorList.Count
-        $ErrorList = $ErrorList | sort -Descending -Property start
+        Write-Verbose "[Get-HtmlAnchorsPositions] returned a list of size $PositionListCount"
 
-        Write-Verbose "*********************************************"
-        Write-Verbose "Found $ErrorListCount Textgroup to remove"
-        $UpdatedText = $datasection
-        ForEach($o in $ErrorsList){
+        [System.Collections.ArrayList]$HtmlErrorsList = [System.Collections.ArrayList]::new()
+        [System.Collections.ArrayList]$HtmlErrorsList = Get-HtmlAnchorsErrors -Text "$datasection" -Positions $PositionList
+        $HtmlErrorsListCount = $HtmlErrorsList.Count
+
+        Write-Verbose "[Get-HtmlAnchorsErrors] returned a list of size $HtmlErrorsListCount"
+
+
+        [System.Collections.ArrayList]$LogStringList = [System.Collections.ArrayList]::new()
+        [string]$ListLogStr = "`n"
+        $ObjId = 0
+        $HtmlErrorsList | % {
+            $Obj = $_ 
+            $ObjId++
+            $StartIdValue = $Obj.start
+            $EndIdValue = $Obj.end
+            $LenValue = $Obj.len
+
+            $ListLogStr = "`nHtmlErrors [$ObjId]`nStartIdValue $StartIdValue`EndIdValue $EndIdValue`LenValue $LenValue`n"
+            [void]$LogStringList.Add($ListLogStr)
+        }
+
+        $ItemsLogs = $LogStringList | Out-String
+        $SpecialLogString = @"
+=====================================================
+Listing Errors Instances HtmlErrorsList                
+$ItemsLogs
+"@
+        Write-Verbose "$SpecialLogString"
+
+      
+        Write-Verbose "Sorting HTML Errors Data Objects"
+
+        $HtmlErrorsListSorted = $HtmlErrorsList | sort -Descending -Property start
+
+        [System.Collections.ArrayList]$LogStringList = [System.Collections.ArrayList]::new()
+        [string]$ListLogStr = "`n"
+        $ObjId = 0
+        $HtmlErrorsListSorted | % {
+            $Obj = $_ 
+            $ObjId++
+            $StartIdValue = $Obj.start
+            $EndIdValue = $Obj.end
+            $LenValue = $Obj.len
+
+            $ListLogStr = "`nHtmlErrors [$ObjId]`nStartIdValue $StartIdValue`EndIdValue $EndIdValue`LenValue $LenValue`n"
+            [void]$LogStringList.Add($ListLogStr)
+        }
+
+        $ItemsLogs = $LogStringList | Out-String
+        $SpecialLogString = @"
+=====================================================
+Listing Errors Instances HtmlErrorsListSorted                  
+$ItemsLogs
+"@
+        Write-Verbose "$SpecialLogString"
+
+        [string]$htmldata_before_filepath = "{0}\{1}.html" -f $tmppath, "DEBUG_HtmlData-Before-Remove"
+        [string]$htmldata_after_filepath = "{0}\{1}.html" -f $tmppath, "DEBUG_HtmlData-After-Remove"
+
+        [string]$HtmlTextBefore = "$datasection".Clone()
+        [string]$HtmlTextAfter  = "$datasection".Clone()
+
+        Write-Verbose "Saving HtmlData in HtmlTextBefore"
+        [string]$HtmlTextBefore = "$datasection".Clone()
+        [int]$HtmlTextBeforeLength = $HtmlTextBefore.Length
+
+        [int]$ModificationNum = 1
+          
+        [void]$LogStringList.Clear()
+
+        [string]$ListLogStr = ""
+        $HtmlErrorsListSorted | % {
+            $Obj = $_ 
+            $o = $_ 
+            $StartIdValue = $Obj.start
+            Write-Verbose "   HtmlObject"
+            Write-Verbose ""
+
             $StartPos = $o.start
             $EndPos = $o.end
             $StrLen = $o.len
+            $StartPos = $StartPos - 2
+            $StrLen = $StrLen - 2
+            
+            [string]$HtmlTextAfter  = "$datasection".Remove($StartPos,$StrLen).Clone()
+            [int]$HtmlTextAfterLength = $HtmlTextAfter.Length
 
-            $UpdatedText = $datasection.Remove($StartPos-2,$StrLen-2)
+            $SpecialLogString = @"
+-----------------------------------------------     
+Modification No $ModificationNum
+   - Removing $StrLen Bytes in HtmlTextData
+   - HtmlTextData size is $HtmlTextBeforeLength bytes before modifications.
+   - Removing $StrLen bytes from HtmlData.
+   - HtmlTextData size is $HtmlTextAfterLength bytes after modifications.
+-----------------------------------------------
+"@
+            Write-Verbose "$SpecialLogString"
         }
 
-        $datasection = $UpdatedText
+        Write-Verbose "Saving HtmlTextBefore in file `"$htmldata_before_filepath`""
+        Set-Content -Path "$htmldata_before_filepath" -Value "$HtmlTextBefore"
+
+        Write-Verbose "Saving HtmlTextAfter in file `"$htmldata_after_filepath`""
+        Set-Content -Path "$htmldata_after_filepath" -Value "$HtmlTextAfter"
+
+        Write-Verbose "Copying HtmlTextData in variable datasection"
+
+
+        Write-Verbose "====================================================="
+        Write-Verbose "====================================================="
+        Write-Verbose "====================================================="
+        Write-Verbose "====================================================="
+
+        $datasection = $HtmlTextAfter.Clone()
 
         $datasection = $datasection.Replace("`"/embedded/","`"https://developer.nvidia.com/embedded/")
         $datasection = $datasection.Replace("embedded//","embedded/")
@@ -220,7 +331,7 @@ function Initialize-HtmlData {
         $linkssection = $datasection.SubString($ilinks, $numchars )
         Write-Verbose "bytes after $($linkssection.Length)"
 
-        if($Script:EnableTestCode){
+        if($Script:EnableTestCode -eq $True){
             ####################### TEST BEGIN #########################
             $inprogresspath1 = "{0}\{1}.html" -f $tmppath, "inprogress_1"
             Set-Content -Path "$inprogresspath1" -Value "$linkssection"
