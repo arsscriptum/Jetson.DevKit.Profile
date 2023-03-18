@@ -41,14 +41,33 @@ function Initialize-HtmlData {
             $UrlBaseName = $MyUri.Segments[$MyUri.Segments.Count-1]
         }
 
+        Write-Verbose "Initialize-HtmlData"
+        Write-Verbose "$Url"
+
         $htmldatapath = "{0}\{1}.html" -f $tmppath, $UrlBaseName
-        
-        Invoke-WebRequest -Uri $Url -OutFile "$htmldatapath"
+        Write-Verbose "local html file path $htmldatapath"
+
+        if(Test-Path $htmldatapath -PathType Leaf){
+            $null = Remove-Item "$htmldatapath"  -Force -ErrorAction Ignore
+            Write-Verbose "deleting `"$htmldatapath`""
+        }
+
+        Write-Verbose "downloading using wget..."
+        $WgetExe = (Get-Command 'wget.exe').Source 
+        & "$WgetExe" "$Url" "-O" "$htmldatapath" "-o" "$ENV:TEMP\wget.log"
+
+        #Invoke-WebRequest -Uri $Url -OutFile 
+
         $cnt = Get-Content $htmldatapath -Raw
         $len = $cnt.Length
 
+        Write-Verbose "$htmldatapath $len bytes"
+
         $ihead = $cnt.IndexOf('</head><body')
-        $datasection = $cnt.SubString($ihead, $len - $ihead)
+
+        [int]$numchars = $len - $ihead
+        Write-Verbose "cutting data $numchars chars from $ihead"
+        $datasection = $cnt.SubString($ihead, $numchars)
 
         $datasection = $datasection.Replace('/embedded/','https://developer.nvidia.com/embedded/')
         $datasection = $datasection.Replace("<a target=","<a")
@@ -64,7 +83,12 @@ function Initialize-HtmlData {
         $elinks = $datasection.IndexOf('</a>',$lastdllink)
         Write-Verbose "first link index $ilinks"
         Write-Verbose "last link index $elinks"
-        $linkssection = $datasection.SubString($ilinks, $elinks - $ilinks)
+
+        [int]$numchars = $elinks - $ilinks
+        Write-Verbose "cutting data $numchars chars from pos[$ilinks]`nbytes before $($datasection.Length)"
+        $linkssection = $datasection.SubString($ilinks, $numchars )
+        Write-Verbose "bytes after $($linkssection.Length)"
+
         $linkssection = $linkssection.Replace('<a href',"`n<a href")
         $linkssection = $linkssection.Replace('</a>',"</a>`n")
         $linkssection = $linkssection.Replace('</li><li>',"")
@@ -91,11 +115,15 @@ function Invoke-ParseHtmlPage {
         $List = Get-Content $Path
         $LinksList = [System.Collections.ArrayList]::new()
         ForEach($line in $List){
+            #Write-Verbose "proccessing line `"$line`""
             if($line -match $urlpattern){
-
+                #Write-Verbose "regex match found!"
                 $url = $Matches.url
                 $name  = $Matches.name
                 
+                $url = $url.Trim('"')
+                $url = $url.Trim()
+
                 $o = [PsCustomObject]@{
                     Name = $name 
                     Url = $url
@@ -103,6 +131,7 @@ function Invoke-ParseHtmlPage {
                 [void]$LinksList.Add($o)
             }
         }
+        Write-Verbose "found $($LinksList.Count) objects"
         $LinksList
     }catch{
         Show-ExceptionDetails $_ -ShowStack
@@ -129,7 +158,7 @@ function Invoke-GenerateIndexFromHtml {
         }
 
         $tmppath = Join-Path "$PSScriptRoot" "tmp"
-        # $null = Remove-Item "$tmppath" -Recurse -Force -ErrorAction Ignore
+        #    $null = Remove-Item "$tmppath" -Recurse -Force -ErrorAction Ignore
         if(-not (Test-Path -Path "$tmppath" -PathType "Container")){
             $null = New-Item "$tmppath" -ItemType directory -Force -ErrorAction Ignore
         }
@@ -161,10 +190,10 @@ function Invoke-GenerateIndexFromHtml {
          
             [string]$u = $obj.url
             [string]$n = $obj.name
-            [string]$u = $u.Trim("`"")
+            
             [Uri]$MyUri = $u
 
-            Write-Host "Deteced new resources data" -f DarkCyan
+            Write-Output "Deteced new resources data" 
 
             $IsUrlInvalid = (([string]::IsNullOrEmpty($($MyUri.Host))) -Or ([string]::IsNullOrEmpty($($MyUri.LocalPath))))
             $filebasename = ''
@@ -183,12 +212,12 @@ function Invoke-GenerateIndexFromHtml {
             $masterlink = "http://jetson.distrib.server/jetson/linux-tegra-r214"
             $link = "{0}/files/{1}" -f $masterlink, $filebasename
 
-            Write-Host "`t`"$n`" added to index file" -f Gray
+            Write-Output "`t`"$n`" added to index file" 
             $MdStr = "- [{0}]({1})" -f $n, $link
             Add-Content "$indexpath"  -Value $MdStr
 
             if($DownloadFile){
-                Write-Host "`tdownloading asset `"$filebasename`""
+                Write-Output "`tdownloading asset `"$filebasename`""
                 $ProgressPreference = 'SilentlyContinue'
                 Invoke-WebRequest -Uri "$u"  -OutFile "$fullfilename" | out-null
                 $ProgressPreference = 'Continue'
