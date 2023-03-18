@@ -212,13 +212,13 @@ function Initialize-HtmlData {
             $EndIdValue = $Obj.end
             $LenValue = $Obj.len
 
-            $ListLogStr = "`nHtmlErrors [$ObjId]`nStartIdValue $StartIdValue`EndIdValue $EndIdValue`LenValue $LenValue`n"
+            $ListLogStr = "HtmlErrors [$ObjId]`n   - StartIdValue $StartIdValue`n   - EndIdValue $EndIdValue`n   - LenValue $LenValue"
             [void]$LogStringList.Add($ListLogStr)
         }
 
         $ItemsLogs = $LogStringList | Out-String
         $SpecialLogString = @"
-=====================================================
+`n=====================================================
 Listing Errors Instances HtmlErrorsList                
 $ItemsLogs
 "@
@@ -239,7 +239,7 @@ $ItemsLogs
             $EndIdValue = $Obj.end
             $LenValue = $Obj.len
 
-            $ListLogStr = "`nHtmlErrors [$ObjId]`nStartIdValue $StartIdValue`EndIdValue $EndIdValue`LenValue $LenValue`n"
+            $ListLogStr = "HtmlErrors [$ObjId]`n   - StartIdValue $StartIdValue`n   - EndIdValue $EndIdValue`n   - LenValue $LenValue"
             [void]$LogStringList.Add($ListLogStr)
         }
 
@@ -257,11 +257,12 @@ $ItemsLogs
         [string]$HtmlTextBefore = "$datasection".Clone()
         [string]$HtmlTextAfter  = "$datasection".Clone()
 
-        Write-Verbose "Saving HtmlData in HtmlTextBefore"
+        Write-Verbose "Saving HtmlTextData in variable HtmlTextBefore"
+
         [string]$HtmlTextBefore = "$datasection".Clone()
         [int]$HtmlTextBeforeLength = $HtmlTextBefore.Length
 
-        [int]$ModificationNum = 1
+        [int]$ModificationNum = 
           
         [void]$LogStringList.Clear()
 
@@ -270,8 +271,6 @@ $ItemsLogs
             $Obj = $_ 
             $o = $_ 
             $StartIdValue = $Obj.start
-            Write-Verbose "   HtmlObject"
-            Write-Verbose ""
 
             $StartPos = $o.start
             $EndPos = $o.end
@@ -279,20 +278,27 @@ $ItemsLogs
             $StartPos = $StartPos - 2
             $StrLen = $StrLen - 2
             
-            [string]$HtmlTextAfter  = "$datasection".Remove($StartPos,$StrLen).Clone()
-            [int]$HtmlTextAfterLength = $HtmlTextAfter.Length
+            $ModificationNum++
+
+            $datasection_length_before = $datasection.Length
+            $datasection = "$datasection".Remove($StartPos,$StrLen).Clone()
+            $datasection_length_after = $datasection.Length 
 
             $SpecialLogString = @"
------------------------------------------------     
+`n-----------------------------------------------     
 Modification No $ModificationNum
    - Removing $StrLen Bytes in HtmlTextData
-   - HtmlTextData size is $HtmlTextBeforeLength bytes before modifications.
+   - HtmlTextData size is $datasection_length_before bytes before modifications.
    - Removing $StrLen bytes from HtmlData.
-   - HtmlTextData size is $HtmlTextAfterLength bytes after modifications.
+   - HtmlTextData size is $datasection_length_after bytes after modifications.
 -----------------------------------------------
 "@
             Write-Verbose "$SpecialLogString"
         }
+
+        [string]$HtmlTextAfter = "$datasection".Clone()
+        [int]$HtmlTextAfterLength = $HtmlTextAfter.Length
+
 
         Write-Verbose "Saving HtmlTextBefore in file `"$htmldata_before_filepath`""
         Set-Content -Path "$htmldata_before_filepath" -Value "$HtmlTextBefore"
@@ -302,11 +308,6 @@ Modification No $ModificationNum
 
         Write-Verbose "Copying HtmlTextData in variable datasection"
 
-
-        Write-Verbose "====================================================="
-        Write-Verbose "====================================================="
-        Write-Verbose "====================================================="
-        Write-Verbose "====================================================="
 
         $datasection = $HtmlTextAfter.Clone()
 
@@ -343,6 +344,7 @@ Modification No $ModificationNum
             $inprogresspath2 = "{0}\{1}.html" -f $tmppath, "inprogress_2"
             Set-Content -Path "$inprogresspath2" -Value "$linkssection"
 
+            <#
             Start-Sleep 1
 
             Invoke-Subl "$inprogresspath0"
@@ -356,6 +358,7 @@ Modification No $ModificationNum
                 $cc = "C:\Program Files\Araxis\Araxis Merge\Compare.exe"
                 &"$cc" "/nowait" "/3" "$inprogresspath0" "$inprogresspath1" "$inprogresspath2" 
             }
+            #>
             ####################### TEST END #########################  
         }
 
