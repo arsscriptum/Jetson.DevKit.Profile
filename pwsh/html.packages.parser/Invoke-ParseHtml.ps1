@@ -4,6 +4,9 @@ param(
     [String]$Url
 )
 
+
+
+
 # ---------------------------------------------------------------
 # Invoke-GenerateIndexFromHtml
 #
@@ -17,6 +20,110 @@ param(
 #
 # 
 # ---------------------------------------------------------------
+
+$Script:EnableTestCode  = $True
+$Script:CompareHtmlData = $True 
+
+
+
+function Search-HtmlAnchors{
+
+    [CmdletBinding(SupportsShouldProcess)]
+    param(
+        [Parameter(Mandatory=$true,Position=0)]
+        [String]$Text,
+        [Parameter(Mandatory=$false)]
+        [String]$Anchor="<a"
+    )
+
+    [System.Collections.ArrayList]$AnchorsList = [System.Collections.ArrayList]::new()
+    $index = $Text.IndexOf("$Anchor")
+    Write-Verbose "found first anchor at $index"
+    if($index -eq -1){
+        return $Null
+    }
+    [void]$AnchorsList.Add($index)
+    While($true){
+        $nextindex = $Text.IndexOf("$Anchor",  ($index + 1))
+
+        if($nextindex -eq -1){
+            break;
+        }
+        Write-Verbose "found next anchor at $nextindex"
+        [void]$AnchorsList.Add($nextindex)
+        $index = $nextindex
+    }
+
+    $AnchorsList
+}
+
+
+function Get-HtmlAnchorsErrors{
+
+    [CmdletBinding(SupportsShouldProcess)]
+    param(
+        [Parameter(Mandatory=$true,Position=0)]
+        [String]$Text,
+        [Parameter(Mandatory=$true,Position=1)]
+        [System.Collections.ArrayList]$Positions
+    )
+
+    $ListIndex = 0
+    $ListSize = $Positions.Count
+    if($ListSize -eq 0){ throw "empty list"}
+    [System.Collections.ArrayList]$TextErrors = [System.Collections.ArrayList]::new()
+    while($True){
+        $start = $Positions[$ListIndex]
+        if(($ListIndex+1) -lt $ListSize){
+            $end = $Positions[$ListIndex + 1]
+        }else{
+            $end = $Text.Length
+        }
+        
+        $len = $end - $start
+
+        [string]$Subset = $Text.SubString($start, 8)
+        [string]$Valid = "<a href="
+        
+        if("$Subset" -ne "$Valid"){
+            
+            [PsCustomObject]$o = [PsCustomObject]@{
+                start = $start 
+                end  = $end
+                len = $len
+            }
+            Write-Verbose "start $start ; end $end ; len $len"
+            [void]$TextErrors.Add($o)
+        }
+        $ListIndex++
+
+        if($ListIndex -ge $ListSize){
+            break;
+        }
+    }
+    $TextErrors
+}
+
+function Get-HtmlAnchorsPositions {
+
+    [CmdletBinding(SupportsShouldProcess)]
+    param(
+        [Parameter(Mandatory=$true,Position=0)]
+        [String]$Path
+    )
+
+    try{
+        $HtmlData = Get-Content "$Path" -Raw
+        $AnchorList = Search-HtmlAnchors -Text "$HtmlData"
+
+        $AnchorListCount = $AnchorList.Count
+        Write-Host "[TEST] " -n -f DarkYellow
+        Write-Host "Search-HtmlAnchors returned $AnchorListCount itmes found" -f Gray
+        $AnchorList
+    }catch{
+        Show-ExceptionDetails $_ -ShowStack
+    }
+}
 
 
 function Initialize-HtmlData {
@@ -69,7 +176,31 @@ function Initialize-HtmlData {
         Write-Verbose "cutting data $numchars chars from $ihead"
         $datasection = $cnt.SubString($ihead, $numchars)
 
-        $datasection = $datasection.Replace('/embedded/','https://developer.nvidia.com/embedded/')
+        $inprogresspath0 = "{0}\{1}.html" -f $tmppath, "inprogress_0"
+        Set-Content -Path "$inprogresspath0" -Value "$datasection"
+        [System.Collections.ArrayList]$PositionList = [System.Collections.ArrayList]::new()
+        $PositionList = Get-HtmlAnchorsPositions -Path "$inprogresspath0" 
+        $PositionListCount = $PositionList.Count
+
+        [System.Collections.ArrayList]$ErrorList = Get-HtmlAnchorsErrors -Text "$datasection" -Positions $PositionList
+        $ErrorListCount = $ErrorList.Count
+        $ErrorList = $ErrorList | sort -Descending -Property start
+
+        Write-Verbose "*********************************************"
+        Write-Verbose "Found $ErrorListCount Textgroup to remove"
+        $UpdatedText = $datasection
+        ForEach($o in $ErrorsList){
+            $StartPos = $o.start
+            $EndPos = $o.end
+            $StrLen = $o.len
+
+            $UpdatedText = $datasection.Remove($StartPos-2,$StrLen-2)
+        }
+
+        $datasection = $UpdatedText
+
+        $datasection = $datasection.Replace("`"/embedded/","`"https://developer.nvidia.com/embedded/")
+        $datasection = $datasection.Replace("embedded//","embedded/")
         $datasection = $datasection.Replace("<a target=","<a")
         $datasection = $datasection.Replace("`"_blank`"","")
 
@@ -89,9 +220,35 @@ function Initialize-HtmlData {
         $linkssection = $datasection.SubString($ilinks, $numchars )
         Write-Verbose "bytes after $($linkssection.Length)"
 
-        $linkssection = $linkssection.Replace('<a href',"`n<a href")
-        $linkssection = $linkssection.Replace('</a>',"</a>`n")
-        $linkssection = $linkssection.Replace('</li><li>',"")
+        if($Script:EnableTestCode){
+            ####################### TEST BEGIN #########################
+            $inprogresspath1 = "{0}\{1}.html" -f $tmppath, "inprogress_1"
+            Set-Content -Path "$inprogresspath1" -Value "$linkssection"
+            #Invoke-Subl "$inprogresspath1"
+            
+            $linkssection = $linkssection.Replace('<a href',"`n<a href")
+            $linkssection = $linkssection.Replace('</a>',"</a>`n")
+            $linkssection = $linkssection.Replace('</li><li>',"")
+            $inprogresspath2 = "{0}\{1}.html" -f $tmppath, "inprogress_2"
+            Set-Content -Path "$inprogresspath2" -Value "$linkssection"
+
+            Start-Sleep 1
+
+            Invoke-Subl "$inprogresspath0"
+            Start-Sleep -Milliseconds 500
+            Invoke-Subl "$inprogresspath1"
+            Start-Sleep -Milliseconds 500
+            Invoke-Subl "$inprogresspath2"
+            Start-Sleep -Milliseconds 500
+
+            if($Script:CompareHtmlData){
+                $cc = "C:\Program Files\Araxis\Araxis Merge\Compare.exe"
+                &"$cc" "/nowait" "/3" "$inprogresspath0" "$inprogresspath1" "$inprogresspath2" 
+            }
+            ####################### TEST END #########################  
+        }
+
+
 
         Set-Content -Path "$htmldatapath" -Value "$linkssection"
         return $htmldatapath
@@ -112,7 +269,7 @@ function Invoke-ParseHtmlPage {
 
     [regex]$urlpattern = [regex]::new('(?<start>[/<a href=/]*)\"(?<url>[0-9a-zA-Z_\.\ /\:\"\-]*)\>*(?<name>[\-\.\ a-zA-Z0-9]*)\<*')
     try{
-        $List = Get-Content $Path
+        $List = Get-Content "$Path"
         $LinksList = [System.Collections.ArrayList]::new()
         ForEach($line in $List){
             #Write-Verbose "proccessing line `"$line`""
@@ -147,10 +304,13 @@ function Invoke-GenerateIndexFromHtml {
         [Parameter(Mandatory=$true,Position=0)]
         [String]$Url,
         [Parameter(Mandatory=$false)]
-        [Switch]$DownloadFile
+        [switch]$DebugErrors
     )
 
     try{
+
+        Write-Verbose "[Invoke-GenerateIndexFromHtml] DebugErrors $DebugErrors"
+
         $outpath = Join-Path "$PSScriptRoot" "out"
 
         if(-not (Test-Path -Path "$outpath" -PathType "Container")){
@@ -163,6 +323,11 @@ function Invoke-GenerateIndexFromHtml {
             $null = New-Item "$tmppath" -ItemType directory -Force -ErrorAction Ignore
         }
 
+        if($DebugErrors){
+            $errorspath = Join-Path "$tmppath" "errors"
+            $null = Remove-Item "$errorspath" -Recurse -Force -ErrorAction Ignore
+            $null = New-Item "$errorspath" -ItemType directory -Force -ErrorAction Ignore
+        }
 
         [Uri]$MyUri = $Url
         $Title = $MyUri.Segments[$MyUri.Segments.Count-1]
@@ -181,30 +346,44 @@ function Invoke-GenerateIndexFromHtml {
         $null = New-Item "$filespath" -ItemType "Directory" -Force -ErrorAction Stop
 
         Write-Verbose "parsing logs from $Path"
-        $ObjectsList = Invoke-ParseHtmlPage -Path $Path
+        $ObjectsList = Invoke-ParseHtmlPage -Path "$Path"
 
         $indexpath = Join-Path "$resourcefolder" "README.md"
         $null = New-Item "$indexpath" -ItemType file -ErrorAction Stop
-
+        $index = 0
+        $totalitems = $ObjectsList.Count
+        [int]$DataErrorCount = 0
         ForEach($obj in $ObjectsList){
          
             [string]$u = $obj.url
             [string]$n = $obj.name
             
+            Write-Verbose "url $u"
+
             [Uri]$MyUri = $u
+            
+            $index++
 
-            Write-Output "Deteced new resources data" 
+            if($DebugErrors){
+                $VariableName = "DEBUG_URL_{0:d2}" -f $index
+                Write-Verbose "Set the debug variable `"$VariableName`""
+                $DebugVar = New-Variable -Name "$VariableName" -Value $MyUri -Option AllScope -Visibility Public -Force -PassThru -Scope Global
+            }
 
-            $IsUrlInvalid = (([string]::IsNullOrEmpty($($MyUri.Host))) -Or ([string]::IsNullOrEmpty($($MyUri.LocalPath))))
+            [int]$SegCheck = $MyUri.Segments.Count
+            Write-Verbose "SegCheck $SegCheck"
+            $IsUrl_Invalid = (([string]::IsNullOrEmpty($($MyUri.Host))) -Or ([string]::IsNullOrEmpty($($MyUri.LocalPath))) -Or ($SegCheck -eq 0))
+            $IsUrl_Valid = !$IsUrl_Invalid
             $filebasename = ''
             
-            if($IsUrlInvalid -eq $True){
+            if($IsUrl_Valid -eq $True){
+                $filebasename = $MyUri.Segments[$MyUri.Segments.Count-1]
+            }else{
+                $DataErrorCount++
                 if(($u.LastIndexOf('/')) -ne -1){
                     $lastslashid = $u.LastIndexOf('/') + 1
                     $filebasename = $u.SubString($lastslashid)
                 }
-            }else{
-                $filebasename = $MyUri.Segments[$MyUri.Segments.Count-1]
             }
 
             $filebasename = $filebasename.Trim()
@@ -212,21 +391,37 @@ function Invoke-GenerateIndexFromHtml {
             $masterlink = "http://jetson.distrib.server/jetson/linux-tegra-r214"
             $link = "{0}/files/{1}" -f $masterlink, $filebasename
 
-            Write-Output "`t`"$n`" added to index file" 
-            $MdStr = "- [{0}]({1})" -f $n, $link
-            Add-Content "$indexpath"  -Value $MdStr
+            $outlogstr = @"
+detected new item [$index / $totalitems]
+`tname         `"$n`"
+`turl          `"$u`" 
+`turl valid?   `"$IsUrl_Valid`"
+`turl basename `"$filebasename`"
+`tlogfile path `"$fullfilename`"
+`tdownload url `"$link`"
+`terrors count `"$DataErrorCount`"
+"@
+            Write-Output "$outlogstr" 
+            
+            if($DebugErrors){
+                if($IsUrl_Invalid){
+                    $errfile = "{0}/errors/{1:d2}-error.txt" -f $tmppath, $index
+                    Set-Content "$errfile"  -Value "$outlogstr"
 
-            if($DownloadFile){
-                Write-Output "`tdownloading asset `"$filebasename`""
-                $ProgressPreference = 'SilentlyContinue'
-                Invoke-WebRequest -Uri "$u"  -OutFile "$fullfilename" | out-null
-                $ProgressPreference = 'Continue'
+                    Write-Host "====================     DATA ERROR     ====================" -f DarkRed
+                    Write-Host "$outlogstr" -f DarkYellow
+                    Write-Host "====================     DATA ERROR     ====================" -f DarkRed
+                }
             }
         }
     }catch{
-        Show-ExceptionDetails $_ -ShowStack
+        if($DebugErrors){
+            Show-ExceptionDetails $_ -ShowStack
+        }else{
+            Write-Error "$_"
+        }
     }
 }
 
 
-Invoke-GenerateIndexFromHtml -Url $Url 
+Invoke-GenerateIndexFromHtml -Url $Url -DebugErrors
